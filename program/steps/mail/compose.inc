@@ -178,7 +178,8 @@ if (!empty($msg_uid) && empty($COMPOSE['as_attachment'])) {
     if (!$MESSAGE->headers) {
         // error
     }
-    else if ($compose_mode == RCUBE_COMPOSE_REPLY) {
+    else if ($compose_mode == RCUBE_COMPOSE_REPLY || $compose_mode == RCUBE_COMPOSE_FORWARD) {
+        // #1489593 - added RCUBE_COMPOSE_FORWARD so that In-Reply-To and References headers are set 
         $COMPOSE['reply_uid']   = $msg_uid;
         $COMPOSE['reply_msgid'] = $MESSAGE->headers->messageID;
         $COMPOSE['references']  = trim($MESSAGE->headers->references . " " . $MESSAGE->headers->messageID);
@@ -1257,11 +1258,19 @@ function rcmail_write_forward_attachments()
         $COMPOSE['forward_uid'] = explode(',', $COMPOSE['forward_uid']);
     }
 
+    // #1489593 collect the message IDs from the messages being attached
+    $messageIds = array();
+
     foreach ((array)$COMPOSE['forward_uid'] as $uid) {
         $message = new rcube_message($uid);
 
         if (empty($message->headers)) {
             continue;
+        }
+
+        // #1489593 add the messageID
+        if (!empty($message->headers->messageID)) {
+            $messageIds[] = $message->headers->messageID;
         }
 
         if (!empty($message->headers->charset)) {
@@ -1321,6 +1330,15 @@ function rcmail_write_forward_attachments()
         }
         else if ($path) {
             @unlink($path);
+        }
+
+        // #1489593 - if we have messageIds from the attachments, put them into the references
+        if (!empty($messageIds)) {
+          // #1489593 - if we have just one, then set the In-Reply-To header
+          if (sizeof($messageIds) == 1) {
+            $COMPOSE['reply_msgid'] = $messageIds[0];
+          }
+          $COMPOSE['references'] = implode(',', $messageIds);
         }
     }
 }
