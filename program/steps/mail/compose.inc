@@ -179,8 +179,14 @@ if (!empty($msg_uid) && empty($COMPOSE['as_attachment'])) {
         // error
     }
     else if ($compose_mode == RCUBE_COMPOSE_REPLY || $compose_mode == RCUBE_COMPOSE_FORWARD) {
-        // #1489593 - added RCUBE_COMPOSE_FORWARD so that In-Reply-To and References headers are set 
-        $COMPOSE['reply_uid']   = $msg_uid;
+        // #1489593 - added RCUBE_COMPOSE_FORWARD so that In-Reply-To and References headers are set
+        if ($compose_mode == RCUBE_COMPOSE_REPLY) {
+            $COMPOSE['reply_uid']   = $msg_uid;
+        }
+        else {
+            $COMPOSE['forward_uid']   = $msg_uid;
+        }
+
         $COMPOSE['reply_msgid'] = $MESSAGE->headers->messageID;
         $COMPOSE['references']  = trim($MESSAGE->headers->references . " " . $MESSAGE->headers->messageID);
 
